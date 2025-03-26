@@ -5,8 +5,8 @@ createdAt: "2025-03-24T05:35:50Z"
 logoURL: "https://raw.githubusercontent.com/kubernetes/minikube/refs/heads/master/logo/logo.png"
 description: A UI for managing local minikube clusters.
 annotations:
-  headlamp/plugin/archive-url: "https://github.com/headlamp-k8s/plugins/releases/download/minikube-0.1.0-alpha-1/headlamp-k8s-minikube-0.1.0-alpha-1.tar.gz"
-  headlamp/plugin/archive-checksum: "SHA256:87acdab62a7e36c9826fdfc6169048245af0d026d4af3e2b759b15a7baa42580"
+  headlamp/plugin/archive-url: "https://github.com/illume/testplugins/releases/download/minikubeprerelease-0.1.0-alpha-1/headlamp-k8s-minikubeprerelease-0.1.0-alpha-1.tar.gz"
+  headlamp/plugin/archive-checksum: "SHA256:ff18e5323504f457d8aff86e2583f87e87fb9acdc6f6be7dc807f7787f27ac02"
   headlamp/plugin/version-compat: ">=0.29"
   headlamp/plugin/distro-compat: "desktop"
   headlamp/plugin/extra-files:
