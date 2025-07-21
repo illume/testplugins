@@ -7,6 +7,7 @@ import {
   Link,
   MenuItem,
   Select,
+  SelectChangeEvent,
   Tooltip,
 } from '@mui/material';
 import React from 'react';
@@ -69,51 +70,54 @@ interface DriverSelectProps {
 export default function DriverSelect({ setDriver, driver }: DriverSelectProps) {
   const drivers = driverLists[detectOS()];
 
-  const handleChange = event => {
-    setDriver(event.target.value);
-  };
+  function handleChange(event: SelectChangeEvent<{ value: string }>) {
+    setDriver(event.target.value as string);
+  }
 
   return (
-    <Box display="flex" alignItems="center">
-      <FormControl>
+    <>
+      <Box sx={{ mt: 2 }} display="flex" alignItems="center">
         <InputLabel id="driver-select-label">Driver</InputLabel>
-        <Select
-          labelId="driver-select-label"
-          id="driver-select"
-          value={driver}
-          label="Driver"
-          displayEmpty
-          onChange={handleChange}
-          aria-labelledby="driver-select-label"
-          sx={{ minWidth: 120, mt: 3, mb: 3, pt: 3, pb: 3 }}
+      </Box>
+      <Box display="flex" alignItems="center">
+        <FormControl>
+          <Select
+            labelId="driver-select-label"
+            id="driver-select"
+            value={{ value: driver }}
+            label="Driver"
+            displayEmpty
+            onChange={handleChange}
+            aria-labelledby="driver-select-label"
+          >
+            {drivers.map(dr => (
+              <MenuItem key={dr.value} value={dr.value}>
+                {dr.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <Tooltip
+          title={
+            <Box>
+              See{' '}
+              <Link
+                href="https://minikube.sigs.k8s.io/docs/drivers/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                information about specific drivers
+              </Link>
+              . If minikube fails to start, see the drivers page for help setting up a compatible
+              container or virtual-machine manager.
+            </Box>
+          }
         >
-          {drivers.map(dr => (
-            <MenuItem key={dr.value} value={dr.value}>
-              {dr.label}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-      <Tooltip
-        title={
-          <Box>
-            See{' '}
-            <Link
-              href="https://minikube.sigs.k8s.io/docs/drivers/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              information about specific drivers
-            </Link>
-            . If minikube fails to start, see the drivers page for help setting up a compatible
-            container or virtual-machine manager.
-          </Box>
-        }
-      >
-        <IconButton>
-          <Icon icon="mdi:information-outline" />
-        </IconButton>
-      </Tooltip>
-    </Box>
+          <IconButton>
+            <Icon icon="mdi:information-outline" />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    </>
   );
 }
