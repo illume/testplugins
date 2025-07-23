@@ -1,6 +1,6 @@
 {
   "name": "@headlamp-k8s/minikubeprerelease",
-  "version": "0.1.3-alpha-1",
+  "version": "0.1.4-alpha-1",
   "description": "A UI for managing local minikube clusters. Run Kubernetes locally. Alpha release.",
   "scripts": {
     "start": "headlamp-plugin start",
@@ -22,6 +22,11 @@
     "kubernetes-debugging",
     "plugins"
   ],
+  "headlamp": {
+    "extraDist": {
+      "manage-minikube.js": "manage-minikube.js"
+    }
+  },
   "prettier": "@headlamp-k8s/eslint-config/prettier-config",
   "eslintConfig": {
     "extends": [
