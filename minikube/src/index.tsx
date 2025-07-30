@@ -186,7 +186,7 @@ registerAddClusterProvider({
 // Declare a global function with the same type as runCommand
 declare const pluginRunCommand: typeof runCommand;
 declare const pluginPath: string;
-const packagePath = pluginPath.startsWith('plugins/')
+const packagePath = (pluginPath.startsWith('plugins/') || pluginPath.startsWith('plugins\\'))
   ? pluginPath.substring(8)
   : pluginPath;
 
