@@ -1,12 +1,12 @@
-version: 0.1.7-alpha-2
+version: 0.1.8-alpha-1
 name: headlamp_minikubeprerelease
 displayName: minikubeprerelease alpha for testing only
 createdAt: "2025-07-21T05:35:50Z"
 logoURL: "https://raw.githubusercontent.com/kubernetes/minikube/42aa2eab55893d852bf9bb17744c79e7b20f8f71/images/logo/logo.svg"
 description: Pre release (alpha), just for testing. A UI for managing local minikube clusters.
 annotations:
-  headlamp/plugin/archive-url: "https://github.com/illume/testplugins/releases/download/minikubeprerelease-0.1.7-alpha-1/headlamp-k8s-minikubeprerelease-0.1.7-alpha-1.tar.gz"
-  headlamp/plugin/archive-checksum: "SHA256:a510329c1ec93ca134f886919dfc012965a893d395dcf1fb8a0ad400a5c759ba"
+  headlamp/plugin/archive-url: "https://github.com/illume/testplugins/releases/download/minikubeprerelease-0.1.8-alpha-1/headlamp-k8s-minikubeprerelease-0.1.8-alpha-1.tar.gz"
+  headlamp/plugin/archive-checksum: "SHA256:8ba508c0dd28892d1174c7996a6ad22c2b84e1de93797ba6e3a4d3ba549c31be"
   headlamp/plugin/version-compat: ">=0.30"
   headlamp/plugin/distro-compat: "desktop"  
   headlamp/plugin/extra-files/0/url: "https://github.com/kubernetes/minikube/releases/download/v1.36.0/minikube-linux-amd64.tar.gz"

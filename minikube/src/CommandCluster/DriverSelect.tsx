@@ -1,5 +1,5 @@
 import { Icon } from '@iconify/react';
-import type { runCommand } from '@kinvolk/headlamp-plugin/lib';
+import { runCommand } from '@kinvolk/headlamp-plugin/lib';
 import {
   Box,
   FormControl,
@@ -43,21 +43,24 @@ function useInfo(): DriverInfo | null {
       {}
     );
     scriptjs.stdout.on('data', data => {
+      console.log('Data from minikube info script:', data.toString());
       stdoutData += data.toString();
     });
     scriptjs.stderr.on('data', data => {
+      console.error('Error from minikube info script:', data.toString());
       console.error('Error fetching minikube info:', data.toString());
     });
     scriptjs.on('exit', code => {
       if (code === 0) {
         try {
+          console.log('Minikube info:', stdoutData);
           setInfo(JSON.parse(stdoutData));
         } catch (e) {
-          console.error('Failed to parse minikube info JSON:', e);
+          console.error('Failed to parse minikube info JSON:', e, stdoutData);
           setInfo(null);
         }
       } else {
-        console.error('Failed to fetch minikube info, exit code:', code);
+        console.error('Failed to fetch minikube info, exit code:', code, stdoutData);
         setInfo(null);
       }
     });
