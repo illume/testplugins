@@ -5,6 +5,179 @@ import CommandDialog from './CommandDialog';
 
 const DEBUG = false;
 
+declare const pluginRunCommand: typeof runCommand;
+declare const pluginPath: string;
+const packagePath =
+  pluginPath.startsWith('plugins/') || pluginPath.startsWith('plugins\\')
+    ? pluginPath.substring(8)
+    : pluginPath;
+
+// minikube profile list --output=json
+/**
+ *
+ * @returns
+ * {
+ *     "invalid": [],
+ *     "valid": [
+ *         {
+ *             "Name": "minikube-1",
+ *             "Status": "OK",
+ *             "Config": {
+ *                 "Name": "minikube-1",
+ *                 "KeepContext": false,
+ *                 "EmbedCerts": false,
+ *                 "MinikubeISO": "https://storage.googleapis.com/minikube/iso/minikube-v1.36.0-arm64.iso",
+ *                 "KicBaseImage": "gcr.io/k8s-minikube/kicbase:v0.0.47@sha256:6ed579c9292b4370177b7ef3c42cc4b4a6dcd0735a1814916cbc22c8bf38412b",
+ *                 "Memory": 6000,
+ *                 "CPUs": 2,
+ *                 "DiskSize": 20000,
+ *                 "Driver": "vfkit",
+ *                 "HyperkitVpnKitSock": "",
+ *                 "HyperkitVSockPorts": [],
+ *                 "DockerEnv": null,
+ *                 "ContainerVolumeMounts": null,
+ *                 "InsecureRegistry": null,
+ *                 "RegistryMirror": [],
+ *                 "HostOnlyCIDR": "192.168.59.1/24",
+ *                 "HypervVirtualSwitch": "",
+ *                 "HypervUseExternalSwitch": false,
+ *                 "HypervExternalAdapter": "",
+ *                 "KVMNetwork": "default",
+ *                 "KVMQemuURI": "qemu:///system",
+ *                 "KVMGPU": false,
+ *                 "KVMHidden": false,
+ *                 "KVMNUMACount": 1,
+ *                 "APIServerPort": 8443,
+ *                 "DockerOpt": null,
+ *                 "DisableDriverMounts": false,
+ *                 "NFSShare": [],
+ *                 "NFSSharesRoot": "/nfsshares",
+ *                 "UUID": "",
+ *                 "NoVTXCheck": false,
+ *                 "DNSProxy": false,
+ *                 "HostDNSResolver": true,
+ *                 "HostOnlyNicType": "virtio",
+ *                 "NatNicType": "virtio",
+ *                 "SSHIPAddress": "",
+ *                 "SSHUser": "root",
+ *                 "SSHKey": "",
+ *                 "SSHPort": 22,
+ *                 "KubernetesConfig": {
+ *                     "KubernetesVersion": "v1.33.1",
+ *                     "ClusterName": "minikube-1",
+ *                     "Namespace": "default",
+ *                     "APIServerHAVIP": "",
+ *                     "APIServerName": "minikubeCA",
+ *                     "APIServerNames": null,
+ *                     "APIServerIPs": null,
+ *                     "DNSDomain": "cluster.local",
+ *                     "ContainerRuntime": "docker",
+ *                     "CRISocket": "",
+ *                     "NetworkPlugin": "cni",
+ *                     "FeatureGates": "",
+ *                     "ServiceCIDR": "10.96.0.0/12",
+ *                     "ImageRepository": "",
+ *                     "LoadBalancerStartIP": "",
+ *                     "LoadBalancerEndIP": "",
+ *                     "CustomIngressCert": "",
+ *                     "RegistryAliases": "",
+ *                     "ExtraOptions": null,
+ *                     "ShouldLoadCachedImages": true,
+ *                     "EnableDefaultCNI": false,
+ *                     "CNI": ""
+ *                 },
+ *                 "Nodes": [
+ *                     {
+ *                         "Name": "",
+ *                         "IP": "192.168.64.48",
+ *                         "Port": 8443,
+ *                         "KubernetesVersion": "v1.33.1",
+ *                         "ContainerRuntime": "docker",
+ *                         "ControlPlane": true,
+ *                         "Worker": true
+ *                     }
+ *                 ],
+ *                 "Addons": {
+ *                     "default-storageclass": true,
+ *                     "storage-provisioner": true
+ *                 },
+ *                 "CustomAddonImages": null,
+ *                 "CustomAddonRegistries": null,
+ *                 "VerifyComponents": {
+ *                     "apiserver": true,
+ *                     "system_pods": true
+ *                 },
+ *                 "StartHostTimeout": 360000000000,
+ *                 "ScheduledStop": null,
+ *                 "ExposedPorts": [],
+ *                 "ListenAddress": "",
+ *                 "Network": "nat",
+ *                 "Subnet": "",
+ *                 "MultiNodeRequested": false,
+ *                 "ExtraDisks": 0,
+ *                 "CertExpiration": 94608000000000000,
+ *                 "Mount": false,
+ *                 "MountString": "/Users:/minikube-host",
+ *                 "Mount9PVersion": "9p2000.L",
+ *                 "MountGID": "docker",
+ *                 "MountIP": "",
+ *                 "MountMSize": 262144,
+ *                 "MountOptions": [],
+ *                 "MountPort": 0,
+ *                 "MountType": "9p",
+ *                 "MountUID": "docker",
+ *                 "BinaryMirror": "",
+ *                 "DisableOptimizations": false,
+ *                 "DisableMetrics": false,
+ *                 "CustomQemuFirmwarePath": "",
+ *                 "SocketVMnetClientPath": "",
+ *                 "SocketVMnetPath": "",
+ *                 "StaticIP": "",
+ *                 "SSHAuthSock": "",
+ *                 "SSHAgentPID": 0,
+ *                 "GPUs": "",
+ *                 "AutoPauseInterval": 60000000000
+ *             },
+ *             "Active": false,
+ *             "ActiveKubeContext": true
+ *         }
+ *     ]
+ * }
+ *
+ */
+function useMinikubeProfileList() {
+  const [profiles, setProfiles] = React.useState<any | null>(null);
+  React.useEffect(() => {
+    let stdoutData = '';
+    const scriptjs = pluginRunCommand('minikube', ['profile', 'list', '--output=json'], {});
+    scriptjs.stdout.on('data', data => {
+      stdoutData += data.toString();
+    });
+    scriptjs.stderr.on('data', data => {
+      console.error('Error fetching minikube profiles:', data.toString());
+    });
+    scriptjs.on('exit', code => {
+      if (code === 0) {
+        try {
+          setProfiles(JSON.parse(stdoutData));
+        } catch (e) {
+          console.error('Failed to parse minikube profiles JSON:', e);
+          setProfiles(null);
+        }
+      } else {
+        console.error('Failed to fetch minikube profiles, exit code:', code);
+        setProfiles(null);
+      }
+    });
+
+    return () => {
+      // Cleanup if needed
+    };
+  }, []);
+
+  return profiles;
+}
+
 interface CommandClusterProps {
   /**
    * Function to call when the command is about to be started (but not quite started yet)
@@ -29,8 +202,43 @@ interface CommandClusterProps {
   askClusterName?: boolean;
 }
 
-// Declare a global function with the same type as runCommand
-declare const pluginRunCommand: typeof runCommand;
+// const runningCommand = {
+//   clusterName : null,
+//   driver: null,
+//   command: null,
+//   exitCode: null,
+//   stdoutData: [],
+//   errorData: [],
+//   allData: [],
+//   props: effectiveProps,
+// };
+
+type RunningCommandType = {
+  clusterName: string | null;
+  driver: string | null;
+  command: {
+    stdout: {
+      on: (event: string, listener: (chunk: any) => void) => void;
+    };
+    stderr: {
+      on: (event: string, listener: (chunk: any) => void) => void;
+    };
+    on: (event: string, listener: (code: number | null) => void) => void;
+  } | null;
+  exitCode: number | null;
+  stdoutData: string[];
+  errorData: string[];
+  allData: string[];
+  props: CommandClusterProps;
+};
+
+// Define a type for the context
+type RunningCommandContextType = {
+  runningCommand: RunningCommandType | null;
+  setRunningCommand: React.Dispatch<React.SetStateAction<RunningCommandType | null>>;
+};
+
+const commandsRunning = [];
 
 /**
  * Runs a command on a cluster, and shows the output in a dialog.
@@ -44,7 +252,6 @@ export default function CommandCluster(props: CommandClusterProps) {
     onConfirm,
     command,
     finishedText,
-    askClusterName,
   } = props;
   const [openDialog, setOpenDialog] = React.useState(false);
   const [acting, setActing] = React.useState(false);
@@ -52,17 +259,94 @@ export default function CommandCluster(props: CommandClusterProps) {
   const [runningLines, setRunningLines] = React.useState<string[]>([]);
   const [commandDone, setCommandDone] = React.useState(false);
   const [theCluster, setTheCluster] = React.useState<string | null>(null);
+  const runningCommandsRef = React.useRef<RunningCommandType[]>(commandsRunning);
+  const [runningCommand, setRunningCommand] = React.useState<RunningCommandType | null>(null);
+  const minikubeProfiles = useMinikubeProfileList();
 
-  const allDataRef = React.useRef<string[]>([]);
+  if (DEBUG) {
+    console.log('CommandCluster 1', {
+      props,
+      'runningCommandsRef.current': runningCommandsRef.current,
+      runningCommand,
+      minikubeProfiles,
+    });
+  }
 
   React.useEffect(function updateRunningLines() {
     // Make sure react gets notified of the changes to the array
     const intervalId = setInterval(() => {
-      setRunningLines([...allDataRef.current]);
+      if (!runningCommandsRef) {
+        // if (DEBUG) {
+        //   console.log('CommandCluster updateRunningLines 2 returning');
+        // }
+        return;
+      }
+      // last one on the list
+      const runningCommand = runningCommandsRef.current[runningCommandsRef.current.length - 1];
+      const lines = [...(runningCommand?.allData || [])];
+      // if (DEBUG) {
+      //   console.log('CommandCluster updateRunningLines 3, runningCommand:', runningCommand, lines);
+      // }
+      setRunningLines(lines);
     }, 500);
 
     return () => clearInterval(intervalId);
   }, []);
+
+  // If runningCommandsRef is not [] empty then we set the runningCommand to the last one
+  React.useEffect(() => {
+    if (runningCommandsRef.current.length > 0) {
+      if (DEBUG) {
+        console.log(
+          'CommandCluster runningCommandsRef useEffect 4, setting running command',
+          runningCommandsRef.current
+        );
+      }
+
+      // Set the runningCommand to the last one in the list that has the same command.
+      const runningCommand = runningCommandsRef.current.find(cmd => cmd.props.command === command);
+      if (DEBUG) {
+        console.log(
+          'CommandCluster runningCommandsRef useEffect 4.1, runningCommand',
+          runningCommand
+        );
+      }
+      if (runningCommand) {
+        setRunningCommand(runningCommand);
+        if (runningCommand.exitCode === null) {
+          // The command is still running, so we set the state to show the dialog
+          setOpenDialog(true);
+          setActing(true);
+          setRunning(true);
+          setCommandDone(false);
+          setTheCluster(runningCommand.clusterName);
+          if (DEBUG) {
+            console.log(
+              'CommandCluster runningCommandsRef useEffect 4.2, runningCommand',
+              runningCommand
+            );
+          }
+        } else {
+          // The command has finished, but we should still show the dialog
+          // so the user can see the output, and let them press the close button.
+          setOpenDialog(true);
+          setActing(false);
+          setRunning(false);
+          setCommandDone(true);
+          setTheCluster(runningCommand.clusterName);
+          const lines = [...(runningCommand?.allData || [])];
+          setRunningLines(lines);
+
+          if (DEBUG) {
+            console.log(
+              'CommandCluster runningCommandsRef useEffect 4.3, runningCommand',
+              runningCommand
+            );
+          }
+        }
+      }
+    }
+  }, [runningCommandsRef.current]);
 
   React.useEffect(() => {
     if (startOpen) {
@@ -70,9 +354,62 @@ export default function CommandCluster(props: CommandClusterProps) {
     }
   }, [startOpen]);
 
+  React.useEffect(() => {
+    if (runningCommand && runningCommand.exitCode !== null) {
+      if (DEBUG) {
+        console.log('CommandCluster runningCommand?.exitCode 6, setting command done');
+      }
+      setCommandDone(true);
+    }
+  }, [runningCommand?.exitCode]);
+
+  // // get all commands that haven't exited yet from commandsRunning where exitCode is null
+  // const runningCommands = commandsRunning.filter(cmd => cmd.exitCode === null);
+  // const lastRunningCommand = runningCommands.length > 0 ? runningCommands[runningCommands.length - 1] : null;
+  // const allLines = lastRunningCommand ? lastRunningCommand.allData : [];
+
+  // React.useEffect(() => {
+  //   allDataRef.current = allLines;
+  // }, [allLines]);
+
+  // When we load, we want to see if there is a command running already
+  // and if so, we want to show the dialog with the output of that command
+  // if it matches the command we are about to run. Where finishedText and command are the same.
+  // The runningCommands array is used to keep track of the commands that are running.
+  // So react
+
+  // React.useEffect(() => {
+  //   if (DEBUG) {
+  //     console.log('CommandCluster setting state 7, runningCommand', runningCommand);
+  //   }
+  //   if (runningCommand && runningCommand.command && runningCommand.props.command === command) {
+  //     setRunningCommand(runningCommand);
+  //     setOpenDialog(true);
+  //     setActing(true);
+  //     setRunning(true);
+  //     setCommandDone(false);
+  //     setTheCluster(runningCommand.clusterName);
+  //     if (DEBUG) {
+  //       console.log('CommandCluster setting state 8, runningCommand', runningCommand);
+  //     }
+
+  //   } else {
+  //     // If there is no running command, we reset the state
+  //     setOpenDialog(false);
+  //     setActing(false);
+  //     setRunning(false);
+  //     setCommandDone(false);
+  //     setTheCluster(null);
+  //     if (DEBUG) {
+  //       console.log('CommandCluster setting state 9, runningCommand', runningCommand);
+  //     }
+  //     // runningCommandsRef.current = runningCommandsRef.current.filter(cmd => cmd !== runningCommand);
+  //   }
+  // }, [runningCommand, command, onCommandStarted, setRunningCommand]);
+
   function handleRunCommand({ clusterName, driver }: { clusterName: string; driver: string }) {
     if (DEBUG) {
-      console.log('runFunc handleSave', clusterName);
+      console.log('runFunc 10 handleSave', clusterName);
     }
     setTheCluster(clusterName);
     setActing(true);
@@ -80,7 +417,7 @@ export default function CommandCluster(props: CommandClusterProps) {
 
     function runFunc(clusterName: string) {
       if (DEBUG) {
-        console.log('runFunc', clusterName);
+        console.log('runFunc 11', clusterName);
       }
       const args = [command];
       if (command === 'stop') {
@@ -90,49 +427,77 @@ export default function CommandCluster(props: CommandClusterProps) {
         args.push('--keep-context-active', 'true');
       }
       args.push('-p', clusterName);
-      if (driver) {
-        args.push('--driver', driver);
+      let minikube = null;
+
+      // minikubeProfiles
+      const existingProfile = minikubeProfiles?.valid.find(profile => profile.Name === clusterName);
+      const isHyperV = driver === 'hyperv' || existingProfile?.Config?.Driver === 'hyperv';
+
+      if (isHyperV) {
+        minikube = pluginRunCommand(
+          // @ts-ignore
+          'scriptjs',
+          [`${packagePath}/manage-minikube.js`, 'start-minikube-hyperv', ...args],
+          {}
+        );
+      } else {
+        if (driver) {
+          args.push('--driver', driver);
+        }
+        minikube = pluginRunCommand('minikube', args, {});
       }
-      const minikube = pluginRunCommand('minikube', args, {});
+
+      const commandInfo: RunningCommandType = {
+        clusterName,
+        driver,
+        command: minikube,
+        exitCode: null,
+        stdoutData: [],
+        errorData: [],
+        allData: [],
+        props: props,
+      };
+      setRunningCommand(commandInfo);
+      runningCommandsRef.current.push(commandInfo);
+
       if (DEBUG) {
-        console.log('runFunc after runCommand');
+        console.log('runFunc 12, after runCommand');
       }
-      const stdoutData: string[] = [];
-      const errorData: string[] = [];
       setRunning(true);
 
       minikube.stdout.on('data', data => {
         if (DEBUG) {
-          console.log('runFunc stdout:', data);
+          console.log('runFunc 13, stdout:', data);
         }
-        stdoutData.push(data);
-        allDataRef.current.push(data);
+        commandInfo.stdoutData.push(data);
+        commandInfo.allData.push(data);
 
-        if (data.includes(finishedText)) {
-          setCommandDone(true);
-        }
+        // if (data.includes(finishedText)) {
+        //   setCommandDone(true);
+        // }
       });
       minikube.stderr.on('data', (data: string) => {
         if (DEBUG) {
-          console.log('runFunc stderr:', data);
+          console.log('runFunc 14, stderr:', data);
         }
-        errorData.push(data);
-        allDataRef.current.push(data);
+        commandInfo.errorData.push(data);
+        commandInfo.allData.push(data);
       });
       minikube.on('exit', code => {
         if (DEBUG) {
-          console.log('runFunc exit code:', code);
+          console.log('runFunc 15, exit code:', code);
         }
-        setCommandDone(true);
+        commandInfo.exitCode = code;
+        // setCommandDone(true);
       });
 
       onConfirm();
       if (DEBUG) {
-        console.log('runFunc finished');
+        console.log('runFunc 16, finished');
       }
     }
     if (DEBUG) {
-      console.log('runFunc dispatching', clusterName);
+      console.log('runFunc 17, dispatching', clusterName);
     }
 
     clusterAction(() => runFunc(clusterName), {
@@ -149,6 +514,20 @@ export default function CommandCluster(props: CommandClusterProps) {
       },
     });
   }
+  const askClusterName = runningCommand
+    ? runningCommand.props.askClusterName
+    : props.askClusterName;
+
+  if (DEBUG) {
+    console.log('CommandCluster 18, ', {
+      runningCommand,
+      command,
+      theCluster,
+      acting,
+      running,
+      commandDone,
+    });
+  }
 
   return (
     <>
@@ -162,9 +541,21 @@ may keep running in the background. Leave?"
         onClose={() => {
           setOpenDialog(false);
           handleClose();
-          allDataRef.current = [];
           setActing(false);
           setCommandDone(false);
+          setRunningCommand(null);
+          //@todo: should this remove the running command?
+
+          // If the runningCommand is not null, and the exitCode is not null,
+          if (runningCommand && runningCommand.exitCode !== null) {
+            // then we remove it from the runningCommandsRef
+            if (DEBUG) {
+              console.log('CommandCluster onClose 18, removing running command', runningCommand);
+            }
+            runningCommandsRef.current = runningCommandsRef.current.filter(
+              cmd => cmd !== runningCommand
+            );
+          }
         }}
         onConfirm={({ clusterName, driver }) => handleRunCommand({ clusterName, driver })}
         command={command}
