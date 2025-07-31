@@ -54,6 +54,13 @@ function useInfo(): DriverInfo | null {
       if (code === 0) {
         try {
           console.log('Minikube info:', stdoutData);
+
+          // Has these two lines we need to strip out from the beginning if they exist:
+          // "App starting..."
+          // "Check for updates:  true"
+          // Remove both lines if present, regardless of line ending (\n or \r\n)
+          stdoutData = stdoutData.replace(/^(App starting\.\.\.\r?\n)?(Check for updates:\s+true\r?\n)?/m, '');
+          console.log('Parsed minikube info:', stdoutData);
           setInfo(JSON.parse(stdoutData));
         } catch (e) {
           console.error('Failed to parse minikube info JSON:', e, stdoutData);
