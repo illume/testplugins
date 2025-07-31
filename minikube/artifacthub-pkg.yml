@@ -1,4 +1,4 @@
-version: 0.1.7-alpha-1
+version: 0.1.7-alpha-2
 name: headlamp_minikubeprerelease
 displayName: minikubeprerelease alpha for testing only
 createdAt: "2025-07-21T05:35:50Z"
@@ -36,5 +36,5 @@ annotations:
   headlamp/plugin/extra-files/4/url: "https://github.com/kubernetes/minikube/releases/download/v1.36.0/minikube-windows-amd64.tar.gz"
   headlamp/plugin/extra-files/4/checksum: "SHA256:392286b27c835bac7e52c875d93213ed70fc4b2fe4e4685853a10e850396f6fa"
   headlamp/plugin/extra-files/4/arch: "win32/x64"
-  headlamp/plugin/extra-files/4/output/minikube/output: "minikube.exe"
+  headlamp/plugin/extra-files/4/output/minikube/output: "minikube"
   headlamp/plugin/extra-files/4/output/minikube/input: "out/minikube-windows-amd64.exe"
