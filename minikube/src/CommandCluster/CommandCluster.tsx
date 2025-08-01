@@ -160,6 +160,8 @@ function useMinikubeProfileList() {
       if (code === 0) {
         try {
           console.log("Minikube profiles: ", stdoutData);
+          stdoutData = stdoutData.replace(/^(App starting\.\.\.\r?\n)?(Check for updates:\s+true\r?\n)?/m, '');
+
           setProfiles(JSON.parse(stdoutData));
         } catch (e) {
           console.error('Failed to parse minikube profiles JSON:', e, stdoutData);

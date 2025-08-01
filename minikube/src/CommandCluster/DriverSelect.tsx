@@ -54,7 +54,6 @@ function useInfo(): DriverInfo | null {
       if (code === 0) {
         try {
           console.log('Minikube info:', stdoutData);
-
           // Has these two lines we need to strip out from the beginning if they exist:
           // "App starting..."
           // "Check for updates:  true"
