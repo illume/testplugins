@@ -181,145 +181,155 @@ function runPrivilegedCommand(mainCommand) {
 function startMinikubeHyperV(args) {
   const mainCommand =
     'minikube start --driver=hyperv' + (args.length > 0 ? ' ' + args.join(' ') : '');
-  runPrivilegedCommand(mainCommand);
+
+  setImmediate(() => {
+    runPrivilegedCommand(mainCommand);
+  });
+  throw new Error('Expected error.');
 }
 
 function info() {
-  /**
-   * Checks to see if services like Hyper-V are running, and other system info.
-   * On mac/win/linux.
-   *
-   * {"diskFree":"720.47","dockerRunning":true,"hyperVRunning":true,"ram":"15.42"}
-   */
-  function detectIfHyperVRunning() {
-    try {
-      const output = execSync('sc query vmms').toString();
-      if (output.includes('RUNNING')) {
-        return true;
-      } else {
+
+
+  setImmediate(() => {
+    /**
+     * Checks to see if services like Hyper-V are running, and other system info.
+     * On mac/win/linux.
+     *
+     * {"diskFree":"720.47","dockerRunning":true,"hyperVRunning":true,"ram":"15.42"}
+     */
+    function detectIfHyperVRunning() {
+      try {
+        const output = execSync('sc query vmms').toString();
+        if (output.includes('RUNNING')) {
+          return true;
+        } else {
+          return false;
+        }
+      } catch (error) {
         return false;
       }
-    } catch (error) {
-      return false;
     }
-  }
 
-  function detectIfDockerRunning() {
-    try {
-      const output = execSync('docker info', { stdio: ['ignore', 'pipe', 'pipe'] });
-      const stdout = output.toString();
-      return stdout.includes('Server Version');
-    } catch (error) {
-      return false;
+    function detectIfDockerRunning() {
+      try {
+        const output = execSync('docker info', { stdio: ['ignore', 'pipe', 'pipe'] });
+        const stdout = output.toString();
+        return stdout.includes('Server Version');
+      } catch (error) {
+        return false;
+      }
     }
-  }
 
-  function getRamWindows() {
-    try {
-      const output = execSync('wmic computersystem get TotalPhysicalMemory').toString();
-      const ramInBytes = parseInt(output.split('\n')[1].trim(), 10);
-      // Convert to GB, 2 decimals
-      return (ramInBytes / (1024 * 1024 * 1024)).toFixed(2);
-    } catch (error) {
-      console.error('Failed to get RAM:', error.message);
-      return null;
+    function getRamWindows() {
+      try {
+        const output = execSync('wmic computersystem get TotalPhysicalMemory').toString();
+        const ramInBytes = parseInt(output.split('\n')[1].trim(), 10);
+        // Convert to GB, 2 decimals
+        return (ramInBytes / (1024 * 1024 * 1024)).toFixed(2);
+      } catch (error) {
+        console.error('Failed to get RAM:', error.message);
+        return null;
+      }
     }
-  }
 
-  function getRamMac() {
-    try {
-      const output = execSync('sysctl -n hw.memsize').toString();
-      const ramInBytes = parseInt(output.trim(), 10);
-      // Convert to GB, 2 decimals
-      return (ramInBytes / (1024 * 1024 * 1024)).toFixed(2);
-    } catch (error) {
-      console.error('Failed to get RAM:', error.message);
-      return null;
+    function getRamMac() {
+      try {
+        const output = execSync('sysctl -n hw.memsize').toString();
+        const ramInBytes = parseInt(output.trim(), 10);
+        // Convert to GB, 2 decimals
+        return (ramInBytes / (1024 * 1024 * 1024)).toFixed(2);
+      } catch (error) {
+        console.error('Failed to get RAM:', error.message);
+        return null;
+      }
     }
-  }
 
-  function getRamLinux() {
-    try {
-      const output = execSync("free -m | awk 'NR==2{print $2}'").toString();
-      const ramMb = parseInt(output.trim(), 10);
-      if (isNaN(ramMb)) return null;
-      // Convert MB to GB, 2 decimals
-      return (ramMb / 1024).toFixed(2);
-    } catch (error) {
-      console.error('Failed to get RAM:', error.message);
-      return null;
+    function getRamLinux() {
+      try {
+        const output = execSync("free -m | awk 'NR==2{print $2}'").toString();
+        const ramMb = parseInt(output.trim(), 10);
+        if (isNaN(ramMb)) return null;
+        // Convert MB to GB, 2 decimals
+        return (ramMb / 1024).toFixed(2);
+      } catch (error) {
+        console.error('Failed to get RAM:', error.message);
+        return null;
+      }
     }
-  }
 
-  function getDiskFreeLinux() {
-    try {
-      const output = execSync("df -k / | tail -n 1 | awk '{print $4}'").toString();
-      const freeKb = parseInt(output.trim(), 10);
-      if (isNaN(freeKb)) return null;
-      // Convert KB to GB, 2 decimals
-      return (freeKb / (1024 * 1024)).toFixed(2);
-    } catch (error) {
-      console.error('Failed to get disk space:', error.message);
-      return null;
+    function getDiskFreeLinux() {
+      try {
+        const output = execSync("df -k / | tail -n 1 | awk '{print $4}'").toString();
+        const freeKb = parseInt(output.trim(), 10);
+        if (isNaN(freeKb)) return null;
+        // Convert KB to GB, 2 decimals
+        return (freeKb / (1024 * 1024)).toFixed(2);
+      } catch (error) {
+        console.error('Failed to get disk space:', error.message);
+        return null;
+      }
     }
-  }
 
-  /**
-   * @returns gigabytes of free disk space on macOS as a number
-   */
-  function getDiskFreeMac() {
-    try {
-      const output = execSync("df -k / | tail -n 1 | awk '{print $4}'").toString();
-      const freeKb = parseInt(output.trim(), 10);
-      if (isNaN(freeKb)) return null;
-      // Convert KB to GB, 2 decimals
-      return (freeKb / (1024 * 1024)).toFixed(2);
-    } catch (error) {
-      console.error('Failed to get disk space:', error.message);
-      return null;
+    /**
+     * @returns gigabytes of free disk space on macOS as a number
+     */
+    function getDiskFreeMac() {
+      try {
+        const output = execSync("df -k / | tail -n 1 | awk '{print $4}'").toString();
+        const freeKb = parseInt(output.trim(), 10);
+        if (isNaN(freeKb)) return null;
+        // Convert KB to GB, 2 decimals
+        return (freeKb / (1024 * 1024)).toFixed(2);
+      } catch (error) {
+        console.error('Failed to get disk space:', error.message);
+        return null;
+      }
     }
-  }
 
-  function getDiskFreeWindows() {
-    try {
-      const output = execSync('wmic logicaldisk get size,freespace,caption').toString();
-      const lines = output.split('\n').filter(line => line.trim() !== '');
-      if (lines.length < 2) return null;
-      const diskInfo = lines[1].split(/\s+/);
-      const freeSpace = parseInt(diskInfo[1], 10);
-      if (isNaN(freeSpace)) return null;
-      // Return GB as number, 2 decimals
-      return (freeSpace / (1024 * 1024 * 1024)).toFixed(2);
-    } catch (error) {
-      console.error('Failed to get disk space:', error.message);
-      return null;
+    function getDiskFreeWindows() {
+      try {
+        const output = execSync('wmic logicaldisk get size,freespace,caption').toString();
+        const lines = output.split('\n').filter(line => line.trim() !== '');
+        if (lines.length < 2) return null;
+        const diskInfo = lines[1].split(/\s+/);
+        const freeSpace = parseInt(diskInfo[1], 10);
+        if (isNaN(freeSpace)) return null;
+        // Return GB as number, 2 decimals
+        return (freeSpace / (1024 * 1024 * 1024)).toFixed(2);
+      } catch (error) {
+        console.error('Failed to get disk space:', error.message);
+        return null;
+      }
     }
-  }
 
-  const info = {};
+    const info = {};
 
-  if (platform === 'win32') {
-    info.diskFree = getDiskFreeWindows();
-    info.dockerRunning = detectIfDockerRunning();
-    info.hyperVRunning = detectIfHyperVRunning();
-    info.ram = getRamWindows();
-  }
+    if (platform === 'win32') {
+      info.diskFree = getDiskFreeWindows();
+      info.dockerRunning = detectIfDockerRunning();
+      info.hyperVRunning = detectIfHyperVRunning();
+      info.ram = getRamWindows();
+    }
 
-  if (platform === 'darwin') {
-    info.diskFree = getDiskFreeMac();
-    info.dockerRunning = detectIfDockerRunning();
-    info.ram = getRamMac();
-  }
+    if (platform === 'darwin') {
+      info.diskFree = getDiskFreeMac();
+      info.dockerRunning = detectIfDockerRunning();
+      info.ram = getRamMac();
+    }
 
-  if (platform === 'linux') {
-    info.diskFree = getDiskFreeLinux();
-    info.dockerRunning = detectIfDockerRunning();
-    info.ram = getRamLinux();
-  }
+    if (platform === 'linux') {
+      info.diskFree = getDiskFreeLinux();
+      info.dockerRunning = detectIfDockerRunning();
+      info.ram = getRamLinux();
+    }
+
+    console.log(JSON.stringify(info));
+    process.exit(0);
+  });
 
 
-  console.log(JSON.stringify(info));
-  process.exit(0);
+  throw new Error('Expected error.');
 }
 
 const commands = {
@@ -346,6 +356,19 @@ function parseCommandLineArgs() {
 
 function main() {
   const [command, args] = parseCommandLineArgs();
+
+  // // override console.log and console.info to avoid printing to the console
+  // // if they start with "App starting..." or "Check for updates"
+  // const originalLog = console.log;
+  // console.log = function (...messages) {
+  //   if (messages.length > 0) {
+  //     const message = messages.join(' ');
+  //     if (!message.startsWith('App starting...') && !message.startsWith('Check for updates')) {
+  //       originalLog.apply(console, messages);
+  //     }
+  //   }
+  // };
+  // console.info = console.log;
 
   if (!command || !commands[command]) {
     console.error(command ? `Unknown command: ${command}` : 'No command provided');
