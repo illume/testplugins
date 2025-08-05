@@ -1,4 +1,4 @@
-version: 0.1.17-alpha-1
+version: 0.1.18-alpha-1
 name: headlamp_minikubeprerelease
 displayName: minikubeprerelease alpha for testing only
 createdAt: "2025-07-21T05:35:50Z"
@@ -42,9 +42,9 @@ annotations:
   headlamp/plugin/extra-files/5/checksum: "SHA256:751fb934d8234c0fa0e6558d86010eb36f156a92547f791c5573767af38a2936"
   headlamp/plugin/extra-files/5/arch: "darwin/x64"
   headlamp/plugin/extra-files/5/output/minikube/output: "vfkit"
-  headlamp/plugin/extra-files/5/output/minikube/input: "out/vfkit"
+  headlamp/plugin/extra-files/5/output/minikube/input: "vfkit"
   headlamp/plugin/extra-files/6/url: "https://github.com/crc-org/vfkit/releases/download/v0.6.1/vfkit"
   headlamp/plugin/extra-files/6/checksum: "SHA256:751fb934d8234c0fa0e6558d86010eb36f156a92547f791c5573767af38a2936"
   headlamp/plugin/extra-files/6/arch: "darwin/arm64"
   headlamp/plugin/extra-files/6/output/minikube/output: "vfkit"
-  headlamp/plugin/extra-files/6/output/minikube/input: "out/vfkit"
+  headlamp/plugin/extra-files/6/output/minikube/input: "vfkit"
