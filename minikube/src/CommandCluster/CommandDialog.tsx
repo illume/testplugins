@@ -127,22 +127,22 @@ export default function CommandDialog({
           </FormControl>
           <DriverSelect driver={driver} setDriver={setDriver} info={info} />
           {info && info.hyperVEnabled === false && (
-            <Alert severity="warning">
+            <Alert severity="warning" sx={{ color: '#ff9800', fontWeight: 'bold' }}>
               {`Warning: HyperV is not enabled. You can either enable it or use another driver.`}
             </Alert>
-          )}
-          {info && parseFloat(info.freeRam) < 2 && (
-            <Alert severity="warning">
+            )}
+            {info && parseFloat(info.freeRam) < 2 && (
+            <Alert severity="warning" sx={{ color: '#ff9800', fontWeight: 'bold' }}>
               {`Warning: You have less than 2GB of free Memory available. This may affect performance.`}
             </Alert>
-          )}
-          {info && parseFloat(info.ram) <= 8 && (
-            <Alert severity="warning">
+            )}
+            {info && parseFloat(info.ram) <= 8 && (
+            <Alert severity="warning" sx={{ color: '#ff9800', fontWeight: 'bold' }}>
               {`Warning: We recommend more than 8GB of Memory Total. This may affect performance.`}
             </Alert>
-          )}
-          {info && parseFloat(info.diskFree) < 22 && (
-            <Alert severity="warning">
+            )}
+            {info && parseFloat(info.diskFree) < 22 && (
+            <Alert severity="warning" sx={{ color: '#ff9800', fontWeight: 'bold' }}>
               {`Warning: You have less than 22GB of free Disk available. This may affect performance.`}
             </Alert>
           )}

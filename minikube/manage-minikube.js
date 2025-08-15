@@ -189,41 +189,41 @@ function startMinikubeHyperV(args) {
   runPrivilegedCommand(mainCommand);
 }
 
+/**
+ * Checks to see if services like Hyper-V are running, and other system info.
+ * On mac/win/linux.
+ *
+ * {"diskFree":"720.47","dockerRunning":true,"hyperVRunning":true,"ram":"15.42"}
+ */
+function detectIfHyperVRunning() {
+  try {
+    const output = execSync('sc query vmms').toString();
+    if (output.includes('RUNNING')) {
+      return true;
+    } else {
+      return false;
+    }
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
+ * Checks if Hyper-V is enabled on Windows by verifying if the vmms service exists.
+ * This does not require admin privileges.
+ * @returns {boolean} true if Hyper-V (vmms service) exists, false otherwise.
+ */
+function detectIfHyperVEnabled() {
+  try {
+    const output = execSync('sc query type= service state= all | findstr /I "vmms"').toString();
+    // If output contains "SERVICE_NAME: vmms", Hyper-V is enabled
+    return output.toLowerCase().includes('vmms');
+  } catch (error) {
+    return false;
+  }
+}
+
 function info() {
-  /**
-   * Checks to see if services like Hyper-V are running, and other system info.
-   * On mac/win/linux.
-   *
-   * {"diskFree":"720.47","dockerRunning":true,"hyperVRunning":true,"ram":"15.42"}
-   */
-  function detectIfHyperVRunning() {
-    try {
-      const output = execSync('sc query vmms').toString();
-      if (output.includes('RUNNING')) {
-        return true;
-      } else {
-        return false;
-      }
-    } catch (error) {
-      return false;
-    }
-  }
-
-  /**
-   * Checks if Hyper-V is enabled on Windows by verifying if the vmms service exists.
-   * This does not require admin privileges.
-   * @returns {boolean} true if Hyper-V (vmms service) exists, false otherwise.
-   */
-  function detectIfHyperVEnabled() {
-    try {
-      const output = execSync('sc query type= service state= all | findstr /I "vmms"').toString();
-      // If output contains "SERVICE_NAME: vmms", Hyper-V is enabled
-      return output.toLowerCase().includes('vmms');
-    } catch (error) {
-      return false;
-    }
-  }
-
   function detectIfDockerRunning() {
     try {
       const output = execSync('docker info', { stdio: ['ignore', 'pipe', 'pipe'] });
