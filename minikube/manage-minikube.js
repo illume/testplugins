@@ -178,6 +178,12 @@ function runPrivilegedCommand(mainCommand) {
  * @param {string[]} args extra arguments to pass to minikube start
  */
 function startMinikubeHyperV(args) {
+  if (!detectIfHyperVRunning()) {
+    console.error('Hyper-V is not running. Starting Hyper-V service...');
+    runPrivilegedCommand(
+      'powershell -Command "Start-Service vmms"'
+    );
+  }
   const mainCommand =
     'minikube start --driver=hyperv' + (args.length > 0 ? ' ' + args.join(' ') : '');
   runPrivilegedCommand(mainCommand);
@@ -198,6 +204,21 @@ function info() {
       } else {
         return false;
       }
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * Checks if Hyper-V is enabled on Windows by verifying if the vmms service exists.
+   * This does not require admin privileges.
+   * @returns {boolean} true if Hyper-V (vmms service) exists, false otherwise.
+   */
+  function detectIfHyperVEnabled() {
+    try {
+      const output = execSync('sc query type= service state= all | findstr /I "vmms"').toString();
+      // If output contains "SERVICE_NAME: vmms", Hyper-V is enabled
+      return output.toLowerCase().includes('vmms');
     } catch (error) {
       return false;
     }
@@ -362,6 +383,7 @@ function info() {
     info.diskFree = getDiskFreeWindows();
     info.dockerRunning = detectIfDockerRunning();
     info.hyperVRunning = detectIfHyperVRunning();
+    info.hyperVEnabled = detectIfHyperVEnabled();
     info.ram = getRamWindows();
     info.freeRam = getFreeRamWindows();
   }
