@@ -156,7 +156,7 @@ export default function CommandDialog({
     </>
   );
 
-  const waitForDriver = command === 'start' ? driver === null : false;
+  const waitForDriver = command === 'start' && askClusterName ? driver === null : false;
 
   const buttons = (
     <>
