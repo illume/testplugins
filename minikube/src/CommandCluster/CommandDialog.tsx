@@ -14,13 +14,13 @@ import TextField from '@mui/material/TextField';
 import React from 'react';
 import { useHistory } from 'react-router-dom';
 import DriverSelect from './DriverSelect';
-import { useInfo } from './useInfo';
+import { DriverInfo } from './useInfo';
 
 export interface CommandDialogProps {
   /** Is the dialog open? */
   open: boolean;
   /** Function to call when the dialog is closed */
-  onClose: () => void;
+  onClose: (cancel?: boolean) => void;
   /** Function to call when the user confirms the action */
   onConfirm: (data: { clusterName: string; driver: string }) => void;
   /** Command to run, like stop, start, delete... */
@@ -41,6 +41,7 @@ export interface CommandDialogProps {
   initialClusterName?: string;
   /** Ask for the cluster name. Otherwise the initialClusterName is used. */
   askClusterName?: boolean;
+  info: DriverInfo | null;
 }
 
 /**
@@ -59,11 +60,11 @@ export default function CommandDialog({
   useGrid,
   initialClusterName,
   askClusterName,
+  info,
 }: CommandDialogProps) {
   const [clusterName, setClusterName] = React.useState(initialClusterName || '');
   const [driver, setDriver] = React.useState<string | null>(null);
   const [nameTaken, setNameTaken] = React.useState(false);
-  const info = useInfo();
 
   const history = useHistory();
   const clusters = useClustersConf() || {};
@@ -127,22 +128,22 @@ export default function CommandDialog({
           </FormControl>
           <DriverSelect driver={driver} setDriver={setDriver} info={info} />
           {info && info.hyperVEnabled === false && (
-            <Alert severity="warning" sx={{ color: '#ff9800', fontWeight: 'bold' }}>
+            <Alert severity="warning">
               {`Warning: HyperV is not enabled. You can either enable it or use another driver.`}
             </Alert>
-            )}
-            {info && parseFloat(info.freeRam) < 2 && (
-            <Alert severity="warning" sx={{ color: '#ff9800', fontWeight: 'bold' }}>
+          )}
+          {info && parseFloat(info.freeRam) < 2 && (
+            <Alert severity="warning">
               {`Warning: You have less than 2GB of free Memory available. This may affect performance.`}
             </Alert>
-            )}
-            {info && parseFloat(info.ram) <= 8 && (
-            <Alert severity="warning" sx={{ color: '#ff9800', fontWeight: 'bold' }}>
+          )}
+          {info && parseFloat(info.ram) <= 8 && (
+            <Alert severity="warning">
               {`Warning: We recommend more than 8GB of Memory Total. This may affect performance.`}
             </Alert>
-            )}
-            {info && parseFloat(info.diskFree) < 22 && (
-            <Alert severity="warning" sx={{ color: '#ff9800', fontWeight: 'bold' }}>
+          )}
+          {info && parseFloat(info.diskFree) < 22 && (
+            <Alert severity="warning">
               {`Warning: You have less than 22GB of free Disk available. This may affect performance.`}
             </Alert>
           )}
@@ -165,10 +166,11 @@ export default function CommandDialog({
 
   const buttons = (
     <>
-      {!acting && waitForDriver && <Loader title={`Detecting drivers...`} />}
-      {!acting && !waitForDriver && (
+      {!acting && waitForDriver && !info && <Loader title={`Detecting drivers...`} />}
+      {!info && !waitForDriver && <Loader title={`Loading cluster info...`} />}
+      {!acting && !waitForDriver && info && (
         <>
-          {!useGrid && <Button onClick={onClose}>Cancel</Button>}
+          {!useGrid && <Button onClick={() => onClose(true)}>Cancel</Button>}
           <Button
             onClick={() => {
               if (clusterName) {
@@ -185,7 +187,7 @@ export default function CommandDialog({
       )}
       {!useGrid && commandDone && (
         <>
-          <Button variant="contained" color="primary" onClick={onClose}>
+          <Button variant="contained" color="primary" onClick={() => onClose(false)}>
             Close
           </Button>
         </>
@@ -208,7 +210,7 @@ export default function CommandDialog({
             variant="contained"
             color="primary"
             onClick={() => {
-              onClose();
+              onClose(false);
               history.push(`/`);
             }}
           >
@@ -232,7 +234,7 @@ export default function CommandDialog({
       </Grid>
     </Grid>
   ) : (
-    <Dialog open={open} onClose={onClose}>
+    <Dialog open={open} onClose={() => onClose(false)}>
       <DialogTitle>{title}</DialogTitle>
       <DialogContent>{content}</DialogContent>
       <DialogActions>{buttons}</DialogActions>

@@ -189,6 +189,30 @@ function startMinikubeHyperV(args) {
   runPrivilegedCommand(mainCommand);
 }
 
+function stopMinikubeHyperV(args) {
+  if (!detectIfHyperVRunning()) {
+    console.error('Hyper-V is not running. Starting Hyper-V service...');
+    runPrivilegedCommand(
+      'powershell -Command "Start-Service vmms"'
+    );
+  }
+  const mainCommand =
+    'minikube stop' + (args.length > 0 ? ' ' + args.join(' ') : '');
+  runPrivilegedCommand(mainCommand);
+}
+
+function deleteMinikubeHyperV(args) {
+  if (!detectIfHyperVRunning()) {
+    console.error('Hyper-V is not running. Starting Hyper-V service...');
+    runPrivilegedCommand(
+      'powershell -Command "Start-Service vmms"'
+    );
+  }
+  const mainCommand =
+    'minikube delete' + (args.length > 0 ? ' ' + args.join(' ') : '');
+  runPrivilegedCommand(mainCommand);
+}
+
 /**
  * Checks to see if services like Hyper-V are running, and other system info.
  * On mac/win/linux.
@@ -377,7 +401,18 @@ function info() {
     }
   }
 
+  function getMinikubeProfileList() {
+    try {
+      const output = execSync('minikube profile list --output=json').toString();
+      return JSON.parse(output);
+    } catch (error) {
+      console.error('Failed to get minikube profiles:', error.message);
+      return {};
+    }
+  }
+
   const info = {};
+  info.minikubeProfiles = getMinikubeProfileList();
 
   if (platform === 'win32') {
     info.diskFree = getDiskFreeWindows();
@@ -403,14 +438,37 @@ function info() {
   }
 
   const simulateSlowComputer = true;
+  const output = JSON.stringify(info) + '\n';
+
+  // Flush stdout reliably across platforms (some pipes/windows consoles
+  // need an extra empty write to actually flush the stream).
+  const flushAndExit = (code = 0) => {
+    // helper that performs an extra empty write then exits on next tick
+    const doEmptyWriteAndExit = () => {
+      process.stdout.write('', () => {
+        setImmediate(() => process.exit(code));
+      });
+    };
+
+    // Write the real output first
+    const ok = process.stdout.write(output, 'utf8');
+
+    if (!ok) {
+      // Wait for drain, then perform an empty write and exit
+      process.stdout.once('drain', doEmptyWriteAndExit);
+    } else {
+      // Already flushed synchronously in libuv queue, but do an empty write
+      // to coax some platforms/pipes to finish flushing.
+      doEmptyWriteAndExit();
+    }
+  };
+
   if (simulateSlowComputer) {
     setTimeout(() => {
-      console.log(JSON.stringify(info));
-      process.exit(0);
+      flushAndExit(0);
     }, 1000);
   } else {
-    console.log(JSON.stringify(info));
-    process.exit(0);
+    flushAndExit(0);
   }
 }
 
@@ -535,6 +593,8 @@ const commands = {
   // 'setup-hyperV-windows-networking': setupHyperVWindowsNetworking,
   // 'ask-restart-libvirt-ubuntu24': askRestartLibvirtUbuntu24,
   'start-minikube-hyperv': startMinikubeHyperV,
+  'stop-minikube-hyperv': stopMinikubeHyperV,
+  'delete-minikube-hyperv': deleteMinikubeHyperV,
   'start-minikube-vfkit': startMinikubeVFKit,
   'minikube-profile': minikubeProfile,
   'is-brew-installed': isBrewInstalled,
