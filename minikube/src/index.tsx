@@ -65,65 +65,116 @@ registerRoute({
 /**
  * @returns true if the cluster is a minikube cluster
  */
-export function isMinikube(cluster: {
-  meta_data?: { extensions?: { context_info?: { provider?: string } } };
-}): boolean {
+function isMinikube(cluster) {
   return cluster.meta_data?.extensions?.context_info?.provider === 'minikube.sigs.k8s.io';
 }
 
-const minikubeCommands = [
-  {
-    key: 'deleteMinikube',
-    label: 'Delete',
-    command: 'delete',
-    finishedText: 'Removed all traces of the',
-  },
-  {
-    key: 'startMinikube',
-    label: 'Start',
-    command: 'start',
-    finishedText: 'Done! kubectl is now configured',
-  },
-  { key: 'stopMinikube', label: 'Stop', command: 'stop', finishedText: 'node stopped.' },
-];
+registerClusterProviderMenuItem(({ cluster, setOpenConfirmDialog, handleMenuClose }) => {
+  if (!isElectron() || !isMinikube(cluster)) {
+    return null;
+  }
 
-for (const cmd of minikubeCommands) {
-  registerClusterProviderMenuItem(({ cluster, setOpenConfirmDialog, handleMenuClose }) => {
-    if (!isElectron() || !isMinikube(cluster)) {
-      return null;
-    }
+  return (
+    <MenuItem
+      onClick={() => {
+        setOpenConfirmDialog('deleteMinikube');
+        handleMenuClose();
+      }}
+    >
+      <ListItemText>{'Delete'}</ListItemText>
+    </MenuItem>
+  );
+});
 
-    return (
-      <MenuItem
-        onClick={() => {
-          setOpenConfirmDialog(cmd.key);
-          handleMenuClose();
-        }}
-      >
-        <ListItemText>{cmd.label}</ListItemText>
-      </MenuItem>
-    );
-  });
+registerClusterProviderMenuItem(({ cluster, setOpenConfirmDialog, handleMenuClose }) => {
+  if (!isElectron() || !isMinikube(cluster)) {
+    return null;
+  }
 
-  registerClusterProviderDialog(({ cluster, openConfirmDialog, setOpenConfirmDialog }) => {
-    if (!isElectron() || !isMinikube(cluster)) {
-      return null;
-    }
+  return (
+    <MenuItem
+      onClick={() => {
+        setOpenConfirmDialog('startMinikube');
+        handleMenuClose();
+      }}
+    >
+      <ListItemText>{'Start'}</ListItemText>
+    </MenuItem>
+  );
+});
 
-    return (
-      <CommandCluster
-        initialClusterName={cluster.name}
-        open={openConfirmDialog === cmd.key}
-        handleClose={() => setOpenConfirmDialog('')}
-        onCommandDispatched={() => {
-          setOpenConfirmDialog('');
-        }}
-        command={cmd.command}
-      />
-    );
-  });
-}
+registerClusterProviderMenuItem(({ cluster, setOpenConfirmDialog, handleMenuClose }) => {
+  if (!isElectron() || !isMinikube(cluster)) {
+    return null;
+  }
 
+  return (
+    <MenuItem
+      onClick={() => {
+        setOpenConfirmDialog('stopMinikube');
+        handleMenuClose();
+      }}
+    >
+      <ListItemText>{'Stop'}</ListItemText>
+    </MenuItem>
+  );
+});
+
+registerClusterProviderDialog(({ cluster, openConfirmDialog, setOpenConfirmDialog }) => {
+  if (!isElectron() || !isMinikube(cluster)) {
+    return null;
+  }
+
+  return (
+    <CommandCluster
+      initialClusterName={cluster.name}
+      open={openConfirmDialog === 'startMinikube'}
+      handleClose={() => setOpenConfirmDialog('')}
+      onConfirm={() => {
+        setOpenConfirmDialog('');
+      }}
+      command={'start'}
+    />
+  );
+});
+
+registerClusterProviderDialog(({ cluster, openConfirmDialog, setOpenConfirmDialog }) => {
+  if (!isElectron() || !isMinikube(cluster)) {
+    return null;
+  }
+
+  return (
+    <CommandCluster
+      initialClusterName={cluster.name}
+      open={openConfirmDialog === 'stopMinikube'}
+      handleClose={() => setOpenConfirmDialog('')}
+      onConfirm={() => {
+        setOpenConfirmDialog('');
+      }}
+      command={'stop'}
+    />
+  );
+});
+
+registerClusterProviderDialog(({ cluster, openConfirmDialog, setOpenConfirmDialog }) => {
+  if (!isElectron() || !isMinikube(cluster)) {
+    return null;
+  }
+
+  return (
+    <CommandCluster
+      initialClusterName={cluster.name}
+      open={openConfirmDialog === 'deleteMinikube'}
+      handleClose={() => setOpenConfirmDialog('')}
+      onConfirm={() => {
+        setOpenConfirmDialog('');
+      }}
+      command={'delete'}
+    />
+  );
+});
+// alert(import.meta.env.HEADLAMP_APP_PLUGIN_PACKAGE_PATH);
+// alert(import.meta.env.VITE_PLUGIN_PACKAGE_PATH);
 // For the add cluster page, add a section for minikube
 registerAddClusterProvider({
   title: 'Create Local Cluster',
@@ -137,15 +188,13 @@ registerAddClusterProvider({
 declare const pluginRunCommand: typeof runCommand;
 declare const pluginPath: string;
 const packagePath =
-  typeof pluginPath !== 'undefined'
-    ? pluginPath.startsWith('plugins/') || pluginPath.startsWith('plugins\\')
-      ? pluginPath.substring(8)
-      : pluginPath.startsWith('user-plugins/') || pluginPath.startsWith('user-plugins\\')
-      ? pluginPath.substring(13)
-      : pluginPath.startsWith('static-plugins/') || pluginPath.startsWith('static-plugins\\')
-      ? pluginPath.substring(15)
-      : pluginPath
-    : '';
+  pluginPath.startsWith('plugins/') || pluginPath.startsWith('plugins\\')
+    ? pluginPath.substring(8)
+    : pluginPath.startsWith('user-plugins/') || pluginPath.startsWith('user-plugins\\')
+    ? pluginPath.substring(13)
+    : pluginPath.startsWith('static-plugins/') || pluginPath.startsWith('static-plugins\\')
+    ? pluginPath.substring(15)
+    : pluginPath;
 
 function Command() {
   function handleClick() {

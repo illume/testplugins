@@ -10,7 +10,7 @@ export default function CreateClusterPage() {
           useGrid
           open
           handleClose={() => {}}
-          onCommandDispatched={() => {}}
+          onConfirm={() => {}}
           command={'start'}
         />
       </SectionBox>

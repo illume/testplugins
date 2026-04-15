@@ -1,5 +1,5 @@
-import { K8s } from '@kinvolk/headlamp-plugin/lib';
 import { Loader } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
+import { useClustersConf } from '@kinvolk/headlamp-plugin/lib/k8s';
 import { Alert, Card } from '@mui/material';
 import { Typography } from '@mui/material';
 import Box from '@mui/material/Box';
@@ -15,29 +15,6 @@ import React from 'react';
 import { useHistory } from 'react-router-dom';
 import DriverSelect from './DriverSelect';
 import { DriverInfo } from './useInfo';
-
-export function generateClusterName(existingNames: string[]): string {
-  const baseName = 'minikube';
-  let newName = baseName;
-  let counter = 1;
-
-  while (existingNames.includes(newName)) {
-    newName = `${baseName}-${counter}`;
-    counter++;
-  }
-
-  return newName;
-}
-
-/** Validates that a minikube profile name is well-formed. Returns an error string, or null if valid. */
-export function isValidClusterName(name: string): string | null {
-  if (!name) return 'Cluster name is required';
-  if (name.length > 63) return 'Cluster name must be 63 characters or fewer';
-  if (!/^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$/.test(name)) {
-    return 'Cluster name must start and end with a letter or number and contain only letters, numbers, and hyphens';
-  }
-  return null;
-}
 
 export interface CommandDialogProps {
   /** Is the dialog open? */
@@ -58,8 +35,6 @@ export interface CommandDialogProps {
   actingLines?: string[];
   /** Is the command done? */
   commandDone: boolean;
-  /** Did the command fail (non-zero exit)? */
-  commandError?: boolean;
   /** should it use a dialog or use a grid? */
   useGrid?: boolean;
   /** The cluster context to act on */
@@ -82,19 +57,18 @@ export default function CommandDialog({
   running,
   actingLines,
   commandDone,
-  commandError,
   useGrid,
   initialClusterName,
   askClusterName,
   info,
 }: CommandDialogProps) {
-  const [clusterName, setClusterName] = React.useState(initialClusterName);
-  const [driver, setDriver] = React.useState('');
-  const [nameError, setNameError] = React.useState<string | null>(null);
+  const [clusterName, setClusterName] = React.useState(initialClusterName || '');
+  const [driver, setDriver] = React.useState<string | null>(null);
+  const [nameTaken, setNameTaken] = React.useState(false);
 
   const history = useHistory();
-  const clusters = K8s.useClustersConf();
-  const clusterNames = React.useMemo(() => Object.keys(clusters || {}), [clusters]);
+  const clusters = useClustersConf() || {};
+  const clusterNames = Object.keys(clusters);
 
   React.useEffect(() => {
     if (open && !initialClusterName && askClusterName) {
@@ -103,6 +77,19 @@ export default function CommandDialog({
     // Only generate a new name when dialog is opened, not on every clusterNames change
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialClusterName, askClusterName]);
+
+  function generateClusterName(existingNames: string[]): string {
+    const baseName = 'minikube';
+    let newName = baseName;
+    let counter = 1;
+
+    while (existingNames.includes(newName)) {
+      newName = `${baseName}-${counter}`;
+      counter++;
+    }
+
+    return newName;
+  }
 
   if (acting && open && !running) {
     if (askClusterName) {
@@ -131,15 +118,11 @@ export default function CommandDialog({
                 onChange={function handleNameChange(event: React.ChangeEvent<HTMLInputElement>) {
                   const name = event.target.value;
                   setClusterName(name);
-                  if (clusterNames.includes(name)) {
-                    setNameError('Cluster name is already taken');
-                  } else {
-                    setNameError(isValidClusterName(name));
-                  }
+                  setNameTaken(clusterNames.includes(name));
                 }}
                 variant="outlined"
-                error={!!nameError}
-                helperText={nameError || ''}
+                error={nameTaken}
+                helperText={nameTaken ? 'Cluster name is already taken' : ''}
               />
             </Box>
           </FormControl>
@@ -175,13 +158,6 @@ export default function CommandDialog({
           ))}
         </Card>
       )}
-      {commandDone && commandError && (
-        <Box sx={{ mt: 2, p: 2, bgcolor: 'error.light', borderRadius: 1 }}>
-          <Typography color="error.contrastText">
-            Command failed. Check the output above for details.
-          </Typography>
-        </Box>
-      )}
       {running && !commandDone && <Loader title={`Loading data for ${title}`} />}
     </>
   );
@@ -203,7 +179,7 @@ export default function CommandDialog({
             }}
             variant="contained"
             color="primary"
-            disabled={!!nameError && askClusterName}
+            disabled={nameTaken && askClusterName}
           >
             {`${command}`}
           </Button>
