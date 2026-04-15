@@ -6,7 +6,7 @@ logoURL: "https://raw.githubusercontent.com/kubernetes/minikube/42aa2eab55893d85
 description: Pre release (alpha), just for testing. A UI for managing local minikube clusters.
 annotations:
   headlamp/plugin/archive-url: "https://github.com/illume/testplugins/releases/download/minikubeprerelease-0.1.29-alpha-1/headlamp-k8s-minikubeprerelease-0.1.29-alpha-1.tar.gz"
-  headlamp/plugin/archive-checksum: "SHA256:16fabbb3cb38088b5205fa48ea1603b3319e026a81d0fb1d83bac99fff2d2225"
+  headlamp/plugin/archive-checksum: "SHA256:ebc85ef19d0ad1268ba45ca7854b5a703987eda4bf491fb938b87ffdc5146f9a"
   headlamp/plugin/version-compat: ">=0.30"
   headlamp/plugin/distro-compat: "desktop"  
   headlamp/plugin/extra-files/0/url: "https://github.com/kubernetes/minikube/releases/download/v1.38.1/minikube-linux-amd64.tar.gz"
